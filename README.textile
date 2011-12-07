@@ -7,8 +7,18 @@ Edit them while offline, then upsync them to Redmine.
 
 h2. Usage
 
-# Copy and edit config.yml.dist -> config.yml
-# bin/redsync
+Copy and edit config.yml.dist -> config.yml
+
+<pre>
+--- 
+:url: "http://your.redmine.url/"
+:project_slug: "project_identifier"
+:username: "username"
+:password: "password"
+:data_dir: "~/redsync"
+</pre>
+
+Run @bin/redsync@
 
 <pre>
 Usage: redsync [options]
