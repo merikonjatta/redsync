@@ -44,7 +44,9 @@ OptionParser.new do |opts|
 end.parse!
 
 if !File.exist? options[:config_file]
-  puts "Error: Config file #{options[:config_file]} doesn't exist"
+  puts "Error: Config file #{options[:config_file]} doesn't exist."
+  puts "If this is your first time, copy/rename config.yml.dist and edit it"
+  puts "to set username, password, etc."
   exit
 end
 
