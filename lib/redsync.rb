@@ -89,7 +89,7 @@ class Redsync
     puts "--Download #{pagename}"
     page = @agent.get(stat[:url] + "/edit")
     File.open(stat[:local_file], "w+:UTF-8") { |f| f.write(page.search("textarea")[0].text) }
-    @syncstat.update(pagename, :downloaded_at => File.stat(stat[:local_file].mtime.to_datetime))
+    @syncstat.update(pagename, :downloaded_at => File.stat(stat[:local_file]).mtime.to_datetime)
 
     return Result::DOWNLOADED
   end

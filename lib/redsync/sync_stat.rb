@@ -20,7 +20,7 @@ class Redsync
       page = @agent.get(@config[:wiki_base_url] + "/date_index")
       now = DateTime.now
 
-      # Get remote and local update times from remote
+      # Get remote and local update times using remote list
       page.search("#content h3").each do |h3|
         links = h3.next_element.search("a")
         links.each do |link|
@@ -29,9 +29,14 @@ class Redsync
           local_file = File.join(@config[:data_dir], "#{name}.txt")
 
           remote_updated_at = DateTime.parse(h3.text + "T00:00:00" + now.zone)
-          local_updated_at = File.stat(local_file).mtime.to_datetime
-          if remote_updated_at.year == now.year && remote_updated_at.month == now.month && remote_updated_at.day == now.day
-            remote_updated_at = history(name)[0][:timestamp]
+
+          if File.exist? local_file
+            local_updated_at = File.stat(local_file).mtime.to_datetime
+            if remote_updated_at.year == now.year && remote_updated_at.month == now.month && remote_updated_at.day == now.day
+              remote_updated_at = history(name)[0][:timestamp]
+            end
+          else
+            local_updated_at = DateTime.civil
           end
 
           update(name, {
@@ -41,9 +46,10 @@ class Redsync
             :remote_updated_at => remote_updated_at,
             :local_updated_at => local_updated_at,
           }, true)
+
           update(name, {
             :downloaded_at => local_updated_at
-          }, true) unless self.for(name)[:downloaded_at]
+          }, true) unless File.exist? local_file
         end
       end
 
@@ -123,11 +129,7 @@ class Redsync
 
     def remote_updated_page_names
       self.inject([]) do |sum, page|
-        if !page[:downloaded_at]
-          sum << page[:name]
-        elsif page[:remote_updated_at] && (page[:remote_updated_at] > page[:downloaded_at])
-          sum << page[:name]
-        end
+        sum << page[:name] if page[:remote_updated_at] && (page[:remote_updated_at] > page[:downloaded_at])
         sum
       end
     end
