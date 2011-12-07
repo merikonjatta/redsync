@@ -19,7 +19,7 @@ h2. Usage
 $ redsync --help
 Usage: redsync [options]
     -v, --[no-]verbose               Output verbose logs
-    -c, --config FILE                Use specified config file instead of config.yml
+    -c, --config FILE                Use specified config file instead of ~/redsync.yml
     -u, --upsync-only                Upsync only, don't downsync
     -d, --downsync-only              Downsync only, don't upsync
 </pre>
