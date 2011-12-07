@@ -11,6 +11,8 @@ require 'active_support/all'
 
 require 'redsync/cli'
 require 'redsync/sync_stat'
+require 'redsync/wiki'
+require 'redsync/wiki_page'
 
 
 class Redsync
@@ -25,6 +27,9 @@ class Redsync
     ERROR_ON_CREATE = 64
   end
 
+  attr_reader :config,
+              :agent,
+              :syncstat
 
   def initialize(options)
     @config = {}
@@ -41,6 +46,7 @@ class Redsync
 
     @agent = Mechanize.new
     @syncstat = SyncStat.new(@config, @agent)
+    @wiki = Wiki.new(self)
 
     @logged_in = false
   end

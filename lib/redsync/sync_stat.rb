@@ -26,7 +26,7 @@ class Redsync
         links.each do |link|
           url = @config[:url] + link.attr("href")
           name = URI.decode(url.match(/^#{@config[:wiki_base_url]}\/(.*)$/)[1]).force_encoding("UTF-8")
-          local_file = File.join(@config[:data_dir], "#{name}.txt")
+          local_file = File.join(@config[:data_dir], "#{name}.#{@config[:extension]}")
 
           remote_updated_at = DateTime.parse(h3.text + "T00:00:00" + now.zone)
 
@@ -59,10 +59,10 @@ class Redsync
         next if File.directory?(fullpath)
         next if file =~ /^__redsync_/
         name = Iconv.iconv("UTF-8", "UTF-8-MAC", file) if RUBY_PLATFORM =~ /darwin/
-        name = name.first.match(/(.*)\.txt$/)[1]
+        name = name.first.match(/(.*)\.#{extension}$/)[1]
         next if @stat[name]
 
-        local_file = File.join(@config[:data_dir], "#{name}.txt")
+        local_file = File.join(@config[:data_dir], "#{name}.#{extension}")
         local_updated_at = File.stat(local_file).mtime.to_datetime
         update(name, {
           :name => name,

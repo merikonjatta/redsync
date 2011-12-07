@@ -1,5 +1,6 @@
 require 'optparse'
 require 'yaml'
+require 'redsync'
 
 class Redsync
   class CLI
@@ -11,6 +12,8 @@ class Redsync
 
         redsync = Redsync.new(YAML.load_file(@options.delete(:config_file)).merge(@options))
         exit unless redsync.login
+
+        debugger
 
         time do
           redsync.downsync unless @options[:uponly]
@@ -46,6 +49,7 @@ class Redsync
         if @options[:debug]
           require 'ruby-debug'
           Debugger.settings[:autoeval] = true
+          Debugger.settings[:reload_source_on_change] = true
         end
 
         @options[:config_file] = File.expand_path(@options[:config_file])
