@@ -1,0 +1,6 @@
+--- 
+:url: "http://your.redmine.url/"
+:project_slug: "project_identifier"
+:username: "username"
+:password: "password"
+:data_dir: "~/redsync"
