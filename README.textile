@@ -4,23 +4,19 @@ h2. What's this?
 
 Sync your Redmine's wiki contents to your local filesystem.
 Edit them while offline, then upsync them to Redmine.
+(Requires Ruby 1.9)
+
+h2. Install
+
+<pre>
+gem install redsync
+</pre>
+
 
 h2. Usage
 
-Copy and edit config.yml.dist -> config.yml
-
 <pre>
---- 
-:url: "http://your.redmine.url/"
-:project_slug: "project_identifier"
-:username: "username"
-:password: "password"
-:data_dir: "~/redsync"
-</pre>
-
-Run @bin/redsync@
-
-<pre>
+$ redsync --help
 Usage: redsync [options]
     -v, --[no-]verbose               Output verbose logs
     -c, --config FILE                Use specified config file instead of config.yml
@@ -28,11 +24,6 @@ Usage: redsync [options]
     -d, --downsync-only              Downsync only, don't upsync
 </pre>
 
-h2. Dependencies
-
-* Ruby 1.9
-* Mechanize (@gem install mechanize@)
-* ActiveSupport (@gem install activesupport@)
 
 h2. How it works
 

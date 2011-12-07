@@ -1,66 +1,14 @@
 #!/usr/bin/env ruby
 # -*- vim: filetype=ruby
 
-self_file =
-  if File.symlink?(__FILE__)
-    require 'pathname'
-    Pathname.new(__FILE__).realpath
-  else
-    __FILE__
-  end
-
-require 'fileutils'
-FileUtils.cd(File.join(File.dirname(self_file), ".."))
-$LOAD_PATH << File.join(File.dirname(self_file), "..")
-require 'rubygems'
-require 'redsync'
-require 'optparse'
-require 'yaml'
-require 'ruby-debug'
-Debugger.settings[:autoeval] = true
-
-
-options = {
-  :config_file => "config.yml",
-}
-OptionParser.new do |opts|
-  opts.banner = "Usage: redsync [options]"
-  
-  opts.on("-v", "--[no-]verbose", "Output verbose logs") do |v|
-    options[:verbose] = v
-  end
-
-  opts.on("-c", "--config FILE", "Use specified config file instead of config.yml") do |file|
-    options[:config_file] = file
-  end
-
-  opts.on("-u", "--upsync-only", "Upsync only, don't downsync") do |v|
-    options[:uponly] = v
-  end
-
-  opts.on("-d", "--downsync-only", "Downsync only, don't upsync") do |v|
-    options[:downonly] = v
-  end
-end.parse!
-
-if !File.exist? options[:config_file]
-  puts "Error: Config file #{options[:config_file]} doesn't exist."
-  puts "If this is your first time, copy/rename config.yml.dist and edit it"
-  puts "to set username, password, etc."
+if RUBY_VERSION < '1.9'
+  puts "Redsync requires Ruby >= 1.9.0"
   exit
 end
 
-redsync = Redsync.new(YAML.load_file(options.delete(:config_file)).merge(options))
-exit unless redsync.login
+require 'pathname'
+self_file = Pathname.new(__FILE__).realpath
+$LOAD_PATH << File.join(File.dirname(self_file), "../lib")
+require 'redsync'
 
-began = Time.now
-if options[:uponly]
-  redsync.upsync
-elsif options[:downonly]
-  redsync.downsync
-else
-  redsync.downsync
-  redsync.upsync
-end
-puts "Finished in #{Time.now - began} seconds."
-
+Redsync::CLI.run

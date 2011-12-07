@@ -9,6 +9,8 @@ require 'iconv'
 require 'mechanize'
 require 'active_support/all'
 
+require 'redsync/cli'
+
 
 class Redsync
 
@@ -22,16 +24,8 @@ class Redsync
     ERROR_ON_EDIT = 64
   end
 
-  # Options:
-  # :url => Redmine root URL
-  # :project_slug => Your project slug
-  # :username
-  # :password
-  # :verbose => Output verbose logs
   def initialize(options)
-    @config = {
-      :data_dir => "data",
-    }
+    @config = {}
     @config.merge! options
     @config[:data_dir] = File.expand_path(@config[:data_dir])
     @config[:conflicts_dir] = File.join(@config[:data_dir], "__redsync_conflicts__")
@@ -48,9 +42,12 @@ class Redsync
     @logged_in = false
   end
 
-  
+
   def initialize_system_files
-    FileUtils.mkdir(@config[:data_dir]) unless File.exist? @config[:data_dir]
+    unless File.exist? @config[:data_dir]
+      puts "Creating data dir"
+      FileUtils.mkdir(@config[:data_dir]) 
+    end
     FileUtils.mkdir(@config[:conflicts_dir]) unless File.exist? @config[:conflicts_dir]
     FileUtils.touch(@config[:pages_list_file]) unless File.exist? @config[:pages_list_file]
   end
