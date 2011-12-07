@@ -21,8 +21,8 @@ class Redsync
     SKIPPED_OLD = 4
     UPLOADED = 8
     CREATED = 16
-    ERROR_ON_CREATE = 32
-    ERROR_ON_EDIT = 64
+    ERROR_ON_UPLOAD = 32
+    ERROR_ON_CREATE = 64
   end
 
 
@@ -33,7 +33,8 @@ class Redsync
     @config[:conflicts_dir] = File.join(@config[:data_dir], "__redsync_conflicts__")
     puts "Using data dir: #{@config[:data_dir]}"
 
-    @login_url = @config[:url] + "/login"
+    @config[:url] = @config[:url].match(/(.*?)\/?$/)[1]
+    @config[:login_url] = @config[:url] + "/login"
     @config[:wiki_base_url] = @config[:url] + "/projects/" + @config[:project_slug] + "/wiki"
 
     initialize_system_files
@@ -54,8 +55,8 @@ class Redsync
 
 
   def login
-    puts "Logging in as #{@config[:username]} to #{@login_url}..."
-    page = @agent.get(@login_url)
+    puts "Logging in as #{@config[:username]} to #{@config[:login_url]}..."
+    page = @agent.get(@config[:login_url])
     login_form = page.form_with(:action => "/login")
     login_form.field_with(:name => "username").value = @config[:username]
     login_form.field_with(:name => "password").value = @config[:password]
@@ -100,8 +101,8 @@ class Redsync
     results = {
       Result::UPLOADED => 0,
       Result::CREATED => 0,
+      Result::ERROR_ON_UPLOAD => 0,
       Result::ERROR_ON_CREATE => 0,
-      Result::ERROR_ON_EDIT => 0
     }
     @syncstat.new_page_names.each do |pagename|
       results[upload(pagename, true)] += 1
@@ -113,7 +114,7 @@ class Redsync
     print " (#{results[Result::ERROR_ON_CREATE]} errors)" if results[Result::ERROR_ON_CREATE] > 0
     print "\n"
     print "Uploaded #{results[Result::UPLOADED]} pages."
-    print " (#{results[Result::ERROR_ON_EDIT]} errors)" if results[Result::ERROR_ON_EDIT] > 0
+    print " (#{results[Result::ERROR_ON_UPLOAD]} errors)" if results[Result::ERROR_ON_UPLOAD] > 0
     print "\n"
   end
 
@@ -121,7 +122,7 @@ class Redsync
   def upload(pagename, create = false)
     now = DateTime.now
     stat = @syncstat.for(pagename)
-    puts (create ? "--Upload #{pagename}" : "--Create #{pagename}")
+    puts (create ? "--Create #{pagename}" : "--Upload #{pagename}")
 
     page = @agent.get(@config[:wiki_base_url] + "/" + pagename + "/edit")
     form = page.form_with(:id=>"wiki_form")
@@ -132,14 +133,14 @@ class Redsync
     if errors.any?
       print "--Error: #{pagename}: "
       puts errors
-      return (create ? Result::ERROR_ON_EDIT : Result::ERROR_ON_CREATE)
+      return (create ? Result::ERROR_ON_CREATE : Result::ERROR_ON_UPLOAD)
     else
       now = DateTime.now
       @syncstat.update(pagename, {
         :downloaded_at => now,
         :remote_updated_at => now
       })
-      return (create ? Result::UPLOADED : Result::CREATED)
+      return (create ? Result::CREATED : Result::UPLOADED)
     end
   end
 end

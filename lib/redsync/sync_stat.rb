@@ -58,7 +58,8 @@ class Redsync
         fullpath = File.join(@config[:data_dir], file)
         next if File.directory?(fullpath)
         next if file =~ /^__redsync_/
-        name = Iconv.iconv("UTF-8", "UTF-8-MAC", file).first.match(/(.*)\.txt$/)[1]
+        name = Iconv.iconv("UTF-8", "UTF-8-MAC", file) if RUBY_PLATFORM =~ /darwin/
+        name = name.first.match(/(.*)\.txt$/)[1]
         next if @stat[name]
 
         local_file = File.join(@config[:data_dir], "#{name}.txt")
