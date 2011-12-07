@@ -60,7 +60,7 @@ class Redsync
     login_form.field_with(:name => "username").value = @config[:username]
     login_form.field_with(:name => "password").value = @config[:password]
     result_page = login_form.submit
-    if result_page.link_with(:text => "Sign out")
+    if result_page.search("a.logout").any?
       puts "Logged in successfully."
       return true
     else
