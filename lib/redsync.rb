@@ -10,51 +10,39 @@ require 'mechanize'
 require 'active_support/all'
 
 require 'redsync/cli'
-require 'redsync/sync_stat'
 require 'redsync/wiki'
 require 'redsync/wiki_page'
 
 
 class Redsync
 
-  class Result
-    DOWNLOADED = 1
-    SKIPPED_UNKNOWN = 2
-    SKIPPED_OLD = 4
-    UPLOADED = 8
-    CREATED = 16
-    ERROR_ON_UPLOAD = 32
-    ERROR_ON_CREATE = 64
-  end
-
-  attr_reader :config,
-              :agent,
-              :syncstat
-
+  # Valid options:
+  #   :url => Redmine's base URL. Required.
+  #   :projects => List of target projects. Required.
+  #   :username => Redmine username. Required.
+  #   :password => Redmine password. Required.
+  #   :data_dir => Directory to read/write. Required.
+  #   :extension => Filename extensions. Defaults to "txt"
   def initialize(options)
-    @config = {}
-    @config.merge! options
+    @config = {
+      :extension => "txt",
+    }.merge(options)
+
     @config[:data_dir] = File.expand_path(@config[:data_dir])
-    @config[:conflicts_dir] = File.join(@config[:data_dir], "__redsync_conflicts__")
     puts "Using data dir: #{@config[:data_dir]}"
 
     @config[:url] = @config[:url].match(/(.*?)\/?$/)[1]
     @config[:login_url] = @config[:url] + "/login"
-    @config[:wiki_base_url] = @config[:url] + "/projects/" + @config[:project_slug] + "/wiki"
 
     initialize_system_files
 
     @agent = Mechanize.new
-    @syncstat = SyncStat.new(@config, @agent)
-    @wiki = Wiki.new(self)
-
-    @logged_in = false
   end
 
 
   def initialize_system_files
     unless File.exist? @config[:data_dir]
-      puts "Creating data dir"
+      puts "Creating #{@config[:data_dir]}"
       FileUtils.mkdir(@config[:data_dir]) 
     end
   end
@@ -69,6 +57,7 @@ class Redsync
     result_page = login_form.submit
     if result_page.search("a.logout").any?
       puts "Logged in successfully."
+      instantiate_wikis
       return true
     else
       puts "Login failed."
@@ -77,6 +66,33 @@ class Redsync
   end
 
 
+  def instantiate_wikis
+    @wikis = @config[:projects].inject({}) do |sum, project_identifier|
+      sum[project_identifier] = Wiki.new({
+        :url => @config[:url] + "/projects/" + project_identifier + "/wiki",
+        :cookies => @agent.cookie_jar.cookies(URI.parse(@config[:url])),
+        :data_dir => File.join(@config[:data_dir], project_identifier),
+        :extension => @config[:extension]
+      })
+      sum
+    end
+  end
+
+
+  def sync_all
+    @config[:projects].each do |project_identifier|
+      downsync(project_identifier)
+    end
+  end
+
+  def downsync(project_identifier)
+    wiki = @wikis[project_identifier]
+    wiki.scan_remote
+    debugger;true
+  end
+
+
+=begin
   def downsync
     @syncstat.refresh
     puts "\nDownsync:"
@@ -149,4 +165,6 @@ class Redsync
       return (create ? Result::CREATED : Result::UPLOADED)
     end
   end
+=end
+
 end

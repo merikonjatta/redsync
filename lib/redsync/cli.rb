@@ -13,11 +13,8 @@ class Redsync
         redsync = Redsync.new(YAML.load_file(@options.delete(:config_file)).merge(@options))
         exit unless redsync.login
 
-        debugger
-
         time do
-          redsync.downsync unless @options[:uponly]
-          redsync.upsync unless @options[:downonly]
+          redsync.sync_all
         end
       end
 

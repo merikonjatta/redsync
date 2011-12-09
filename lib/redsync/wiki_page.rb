@@ -5,30 +5,34 @@ require 'redsync/wiki'
 
 class Redsync
   class WikiPage
-    attr_accessor :name,
+    attr_reader   :name,
                   :local_file,
                   :url,
-                  :remote_updated_at,
+                  :local_updated_at
+    attr_accessor :remote_updated_at,
                   :downloaded_at
 
 
     def initialize(wiki, name_or_url_or_fullpath)
-      @config = redsync.config
-      @syncstat = redsync.syncstat
-      @agent = redsync.agent
+      @wiki = wiki
 
-      if name_or_url_or_fullpath =~ /^#{@config[:data_dir]}\/(.*)$/
+      if name_or_url_or_fullpath =~ /^#{@wiki.data_dir}\/(.*)$/
         @local_file = name_or_url_or_fullpath
         @name = $1
-        @url = @config[:wiki_base_url] + "/" + @name
-      elsif name_or_url_or_fullpath =~ /^#{@config[:wiki_base_url]}\/(.*)$/
+        @url = @wiki.url + "/" + @name
+      elsif name_or_url_or_fullpath =~ /^#{@wiki.url}\/(.*)$/
         @url = name_or_url_or_fullpath
-        @name = $1
-        @local_file = File.join(@config[:data_dir], "#{@name}.#{@config[:extension]}")
+        @name = URI.decode($1)
+        @local_file = File.join(@wiki.data_dir, "#{@name}.#{@wiki.extension}")
       else
         @name = name_or_url_or_fullpath
-        @local_file = File.join(@config[:data_dir], "#{@name}.#{@config[:extension]}")
-        @url = @config[:wiki_base_url] + "/" + @name
+        @local_file = File.join(@wiki.data_dir, "#{@name}.#{@wiki.extension}")
+        @url = @wiki.url + "/" + @name
+      end
+
+      @agent = Mechanize.new
+      @wiki.cookies.each do |cookie|
+        @agent.cookie_jar.add(URI.parse(@url), cookie)
       end
     end
 
@@ -42,7 +46,7 @@ class Redsync
       if local_exists?
         File.stat(@local_file).mtime.to_datetime
       else
-        DateTime.civil
+        nil
       end
     end
 
@@ -53,12 +57,28 @@ class Redsync
 
 
     def remote_updated_at
+      at = @remote_updated_at
       now = DateTime.now
-      at = @syncstat.for(name)[:remote_updated_at]
-      if at.year == now.year && at.month == now.month && at.day == now.day
-        at = history[0][:timestamp]
+      if at && ([at.year, at.month, at.day] == [now.year, now.month, now.day])
+        return @remote_updated_at = history[0][:timestamp]
+      else
+        return at
       end
-      at
+    end
+
+
+    def remote_updated_at=(value)
+      @remote_updated_at = DateTime.parse(value.to_s) if value
+    end
+
+
+    def downloaded_at
+      @downloaded_at
+    end
+
+
+    def downloaded_at=(value)
+      @downloaded_at = DateTime.parse(value.to_s) if value
     end
 
 
@@ -79,16 +99,24 @@ class Redsync
     end
 
 
+    def download
+      puts "--Download #{@name}"
+      page = @agent.get(@url + "/edit")
+      File.open(@local_file, "w+:UTF-8") { |f| f.write(page.search("textarea")[0].text) }
+      self.downloaded_at = self.local_updated_at
+    end
+
+
     def to_s
       str = "#<WikiPage"
       str << " name = \"#{name}\"\n"
       str << " local_file = \"#{local_file}\"\n"
-      str << " local_exists? = #{local_exists?}\n"
-      str << " local_updated_at = #{local_updated_at}\n"
       str << " url = \"#{url}\"\n"
-      str << " remote_updated_at = #{remote_updated_at}\n"
       str << " remote_exists? = #{remote_exists?}\n"
-      str << " downloaded_at = #{downloaded_at}\n"
+      str << " remote_updated_at = #{@remote_updated_at ? @remote_updated_at : "<never>"}\n"
+      str << " local_exists? = #{local_exists?}\n"
+      str << " local_updated_at = #{local_updated_at ? local_updated_at : "<never>"}\n"
+      str << " downloaded_at = #{@downloaded_at ? @downloaded_at : "<never>"}\n"
       str << ">"
     end
 
