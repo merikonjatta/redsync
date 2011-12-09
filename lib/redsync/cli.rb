@@ -16,7 +16,7 @@ class Redsync
         case @options[:run_mode]
         when :full_sync
           time do
-            redsync.syc_all
+            redsync.sync_all
           end
         when :interactive
           redsync.interactive
@@ -83,7 +83,7 @@ class Redsync
           else
             c =~ /^y/i
           end
-        block.call if result && block
+        (result && block) ? block.call : result
       end
 
       
