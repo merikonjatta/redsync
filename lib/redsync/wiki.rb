@@ -115,8 +115,8 @@ class Redsync
         links.each do |link|
           url = URI.parse(@url).merge(link.attr("href")).to_s
           wiki_page = WikiPage.new(self, url)
-          wiki_page.remote_updated_at = h3.text
-          @pages_cache[wiki_page.name] = wiki_page
+          @pages_cache[wiki_page.name] = wiki_page unless @pages_cache[wiki_page.name]
+          @pages_cache[wiki_page.name].remote_updated_at = h3.text
         end
       end
     end

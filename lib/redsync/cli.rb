@@ -13,37 +13,38 @@ class Redsync
         redsync = Redsync.new(YAML.load_file(@options.delete(:config_file)).merge(@options))
         exit unless redsync.login
 
-        if @options[:interactive]
-          redsync.interactive
-        else
+        case @options[:run_mode]
+        when :full_sync
           time do
-            redsync.sync_all
+            redsync.syc_all
           end
+        when :interactive
+          redsync.interactive
+        when :status_check
+          redsync.status_check
         end
       end
 
 
       def parse_options
         @options = {
+          :run_mode => :full_sync,
           :config_file => "~/redsync.yml",
         }
 
         OptionParser.new do |opts|
           opts.banner = "Usage: redsync [options]"
-          opts.on("-v", "--[no-]verbose", "Output verbose logs") do |v|
+          opts.on("-v", "--verbose", "Output verbose logs") do |v|
             @options[:verbose] = v
           end
           opts.on("-c", "--config FILE", "Use specified config file instead of ~/redsync.yml") do |file|
             @options[:config_file] = file
           end
-          opts.on("-u", "--upsync-only", "Upsync only, don't downsync") do |v|
-            @options[:uponly] = v
-          end
-          opts.on("-d", "--downsync-only", "Downsync only, don't upsync") do |v|
-            @options[:downonly] = v
+          opts.on("-s", "--status", "Status check. No uploads or downloads will happen") do |v|
+            @options[:run_mode] = :status_check
           end
           opts.on("-i", "--interactive", "Interactive mode (irb)") do |v|
-            @options[:interactive] = v
+            @options[:run_mode] = :interactive
           end
           opts.on("-D", "--debugger", "Debug mode. Requires ruby-debug19") do |v|
             @options[:debug] = v

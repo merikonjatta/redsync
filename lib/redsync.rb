@@ -92,6 +92,19 @@ class Redsync
   end
 
 
+  def status_check
+    @projects.each do |project_identifier|
+      wiki = @wikis[project_identifier]
+      wiki.load_pages_cache
+      wiki.scan
+
+      puts "#{wiki.pages_to_download.length} pages to download"
+      puts "#{wiki.pages_to_create.length} pages to create"
+      puts "#{wiki.pages_to_upload.length} pages to upload"
+    end
+  end
+
+
   def sync_all
     @projects.each do |project_identifier|
       sync(project_identifier)

@@ -134,7 +134,7 @@ class Redsync
 
     def download
       download_to(@local_file)
-      self.downloaded_at = self.remote_updated_at
+      self.downloaded_at = self.local_updated_at
     end
 
 
