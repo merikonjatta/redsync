@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'redsync'
-  s.version = '0.1.2'
+  s.version = '0.2.0'
   s.summary = "Sync Redmine's wiki pages to your local filesystem."
   s.description = "Sync Redmine's wiki pages to your local filesystem. Edit as you like, then upsync."
   s.authors = ["merikonjatta"]

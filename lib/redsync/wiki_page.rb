@@ -10,7 +10,7 @@ class Redsync
                   :url,
                   :local_updated_at
     attr_accessor :remote_updated_at,
-                  :downloaded_at
+                  :synced_at
 
 
     def initialize(wiki, name_or_url_or_fullpath)
@@ -91,16 +91,16 @@ class Redsync
     end
 
 
-    def downloaded_at
-      @downloaded_at
+    def synced_at
+      @synced_at
     end
 
 
-    def downloaded_at=(value)
+    def synced_at=(value)
       if value
         value = DateTime.parse(value.to_s)
         value = DateTime.parse(value.to_s(:db) + DateTime.now.zone) if value.utc?
-        @downloaded_at = value
+        @synced_at = value
       end
     end
 
@@ -134,7 +134,7 @@ class Redsync
 
     def download
       download_to(@local_file)
-      self.downloaded_at = self.local_updated_at
+      self.synced_at = self.local_updated_at
     end
 
 
@@ -155,7 +155,7 @@ class Redsync
     
     def upload
       write_from_file(@local_file)
-      self.downloaded_at = self.remote_updated_at = DateTime.now
+      self.synced_at = self.remote_updated_at = DateTime.now
     end
 
 
@@ -166,7 +166,7 @@ class Redsync
         :local_file => @local_file,
         :remote_updated_at => @remote_updated_at,
         :local_exists => local_exists?,
-        :downloaded_at => @downloaded_at,
+        :synced_at => @synced_at,
       }
     end
 
@@ -180,7 +180,7 @@ class Redsync
       str << " remote_updated_at = #{@remote_updated_at ? @remote_updated_at : "<never>"}\n"
       str << " local_exists? = #{local_exists?}\n"
       str << " local_updated_at = #{local_updated_at ? local_updated_at : "<never>"}\n"
-      str << " downloaded_at = #{@downloaded_at ? @downloaded_at : "<never>"}\n"
+      str << " synced_at = #{@synced_at ? @synced_at : "<never>"}\n"
       str << ">"
     end
 

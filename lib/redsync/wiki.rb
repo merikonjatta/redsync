@@ -79,8 +79,8 @@ class Redsync
     def pages_to_download
       list = []
       list += @pages_cache.values.select { |page| page.exists_in == :remote_only }
-      list += @pages_cache.values.select { |page| page.exists_in == :both && !page.downloaded_at }
-      list += @pages_cache.values.select { |page| page.exists_in == :both && page.downloaded_at && (page.remote_updated_at > page.downloaded_at) }
+      list += @pages_cache.values.select { |page| page.exists_in == :both && !page.synced_at }
+      list += @pages_cache.values.select { |page| page.exists_in == :both && page.synced_at && (page.remote_updated_at > page.synced_at) }
       list
     end
 
@@ -94,7 +94,7 @@ class Redsync
 
     def pages_to_upload
       list = []
-      list += @pages_cache.values.select { |page| page.exists_in == :both && (page.local_updated_at > page.downloaded_at) }
+      list += @pages_cache.values.select { |page| page.exists_in == :both && (page.local_updated_at > page.synced_at) }
       list
     end
 
@@ -149,7 +149,7 @@ class Redsync
       YAML.load_file(@pages_cache_file).each do |page_hash|
         wiki_page = WikiPage.new(self, page_hash[:name])
         wiki_page.remote_updated_at = page_hash[:remote_updated_at]
-        wiki_page.downloaded_at = page_hash[:downloaded_at]
+        wiki_page.synced_at = page_hash[:synced_at]
         @pages_cache[page_hash[:name]] = wiki_page
       end
     end
