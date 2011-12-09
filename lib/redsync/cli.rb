@@ -45,7 +45,7 @@ class Redsync
           opts.on("-i", "--interactive", "Interactive mode (irb)") do |v|
             @options[:interactive] = v
           end
-          opts.on("-D", "--debug", "Debug mode. Requires ruby-debug19") do |v|
+          opts.on("-D", "--debugger", "Debug mode. Requires ruby-debug19") do |v|
             @options[:debug] = v
           end
         end.parse!

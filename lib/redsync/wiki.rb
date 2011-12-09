@@ -1,7 +1,7 @@
 require 'uri'
 require 'mechanize'
 require 'yaml'
-require 'datetime_nil_compare'
+require 'iconv'
 
 class Redsync
   class Wiki
@@ -49,11 +49,59 @@ class Redsync
     end
 
 
-    def remote_updated_pages
-      @pages_cache.inject([]) do |sum, (name, page)|
-        sum << name if page.remote_updated_at > page.local_updated_at
-        sum
+    def downsync
+      queue = pages_to_download
+      queue.each_with_index do |page, i|
+        puts "--Download (#{i+1} of #{queue.count}) #{page.name}"
+        page.download
       end
+      self.write_pages_cache
+    end
+
+
+    def upsync
+      queue = pages_to_create
+      queue.each_with_index do |page, i|
+        puts "--Create (#{i+1} of #{queue.count}) #{page.name}"
+        page.upload
+      end
+      self.write_pages_cache
+
+      queue = pages_to_upload
+      queue.each_with_index do |page, i|
+        puts "--Upload (#{i+1} of #{queue.count}) #{page.name}"
+        page.upload
+      end
+      self.write_pages_cache
+    end
+
+
+    def pages_to_download
+      list = []
+      list += @pages_cache.values.select { |page| page.exists_in == :remote_only }
+      list += @pages_cache.values.select { |page| page.exists_in == :both && !page.downloaded_at }
+      list += @pages_cache.values.select { |page| page.exists_in == :both && page.downloaded_at && (page.remote_updated_at > page.downloaded_at) }
+      list
+    end
+
+
+    def pages_to_create
+      list = []
+      list += @pages_cache.values.select { |page| page.exists_in == :local_only }
+      list
+    end
+
+
+    def pages_to_upload
+      list = []
+      list += @pages_cache.values.select { |page| page.exists_in == :both && (page.local_updated_at > page.downloaded_at) }
+      list
+    end
+
+
+    def scan
+      scan_remote
+      scan_local
     end
 
 
@@ -74,6 +122,20 @@ class Redsync
     end
 
 
+    def scan_local
+      Dir.entries(@data_dir).each do |file|
+        next if File.directory? file
+        next if file =~ /^__redsync_/
+        page_name = file.match(/([^\/\\]+?)\.#{@extension}$/)[1]
+        page_name = Iconv.iconv("UTF-8", "UTF-8-MAC", page_name).first if RUBY_PLATFORM =~ /darwin/
+        next if pages[page_name]
+        pp file
+        wiki_page = WikiPage.new(self, page_name)
+        pages[page_name] = wiki_page
+      end
+    end
+
+
     def write_pages_cache
       File.open(@pages_cache_file, "w+:UTF-8") do |f|
         f.write(self.pages.values.map{ |page| page.to_hash}.to_yaml)
@@ -82,6 +144,7 @@ class Redsync
 
 
     def load_pages_cache
+      return unless File.exist? @pages_cache_file
       @pages_cache = {}
       YAML.load_file(@pages_cache_file).each do |page_hash|
         wiki_page = WikiPage.new(self, page_hash[:name])

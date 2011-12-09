@@ -37,6 +37,21 @@ class Redsync
     end
 
 
+    # Returns one of :remote_only, :local_only, :both or :nowhere
+    # (:nowhere should never happen...)
+    def exists_in
+      if self.local_exists? && self.remote_exists?
+        return :both
+      elsif self.local_exists?
+        return :local_only
+      elsif self.remote_exists?
+        return :remote_only
+      else
+        return :nowhere
+      end
+    end
+    
+
     def local_exists?
       File.exist? @local_file
     end
@@ -59,7 +74,7 @@ class Redsync
     def remote_updated_at
       at = @remote_updated_at
       now = DateTime.now
-      if at && ([at.year, at.month, at.day] == [now.year, now.month, now.day])
+      if at && ([at.year, at.month, at.day, at.hour, at.minute, at.second] == [now.year, now.month, now.day, 0, 0, 0])
         return @remote_updated_at = history[0][:timestamp]
       else
         return at
@@ -68,7 +83,11 @@ class Redsync
 
 
     def remote_updated_at=(value)
-      @remote_updated_at = DateTime.parse(value.to_s) if value
+      if value
+        value = DateTime.parse(value.to_s)
+        value = DateTime.parse(value.to_s(:db) + DateTime.now.zone) if value.utc?
+        @remote_updated_at = value
+      end
     end
 
 
@@ -78,15 +97,19 @@ class Redsync
 
 
     def downloaded_at=(value)
-      @downloaded_at = DateTime.parse(value.to_s) if value
+      if value
+        value = DateTime.parse(value.to_s)
+        value = DateTime.parse(value.to_s(:db) + DateTime.now.zone) if value.utc?
+        @downloaded_at = value
+      end
     end
 
 
     def history
-      puts "--Getting page history for #{name}" if @config[:verbose]
+      puts "--Getting page history for #{@name}"
       now = DateTime.now
       history = []
-      page = @agent.get(@config[:wiki_base_url] + "/" + URI.encode(name) + "/history")
+      page = @agent.get(@url + "/history")
       page.search("table.wiki-page-versions tbody tr").each do |tr|
         timestamp = DateTime.parse(tr.search("td")[3].text + now.zone) 
         author_name = tr.search("td")[4].text.strip
@@ -98,17 +121,41 @@ class Redsync
       history
     end
 
-
-    def download
-      download_to(@local_file)
+    def read
+      page = @agent.get(@url + "/edit")
+      page.search("textarea")[0].text
     end
 
 
     def download_to(file)
-      puts "--Download #{@name}"
+      File.open(file, "w+:UTF-8") { |f| f.write(self.read) }
+    end
+
+
+    def download
+      download_to(@local_file)
+      self.downloaded_at = self.remote_updated_at
+    end
+
+
+    def write(text)
+      now = DateTime.now
       page = @agent.get(@url + "/edit")
-      File.open(file, "w+:UTF-8") { |f| f.write(page.search("textarea")[0].text) }
-      self.downloaded_at = self.local_updated_at
+      form = page.form_with(:id=>"wiki_form")
+      form.field_with(:name=>"content[text]").value = text
+      result_page = form.submit
+      errors = result_page.search("#errorExplanation li").map{ |li| li.text}
+    end
+
+
+    def write_from_file(file)
+      write(File.open(file, "r:UTF-8").read)
+    end
+
+    
+    def upload
+      write_from_file(@local_file)
+      self.downloaded_at = self.remote_updated_at = DateTime.now
     end
 
 
