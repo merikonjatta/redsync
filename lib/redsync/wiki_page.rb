@@ -108,7 +108,7 @@ class Redsync
 
 
     def to_s
-      str = "#<WikiPage"
+      str = "#<Redsync::WikiPage"
       str << " name = \"#{name}\"\n"
       str << " local_file = \"#{local_file}\"\n"
       str << " url = \"#{url}\"\n"

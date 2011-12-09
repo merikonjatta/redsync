@@ -71,5 +71,15 @@ class Redsync
       end
     end
 
+
+    def to_s
+      str = "#<Redsync::Wiki"
+      str << " url = \"#{@url}\"\n"
+      str << " data_dir = \"#{@data_dir}\"\n"
+      str << " extension = \"#{@extension}\"\n"
+      str << " pages = #{@pages_cache.count}\n"
+      str << ">"
+    end
+
   end
 end

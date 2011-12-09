@@ -16,6 +16,13 @@ require 'redsync/wiki_page'
 
 class Redsync
 
+  attr_reader :url,
+              :projects,
+              :username,
+              :data_dir,
+              :extension,
+              :wikis
+
   # Valid options:
   #   :url => Redmine's base URL. Required.
   #   :projects => List of target projects. Required.
@@ -24,15 +31,18 @@ class Redsync
   #   :data_dir => Directory to read/write. Required.
   #   :extension => Filename extensions. Defaults to "txt"
   def initialize(options)
-    @config = {
+    options = {
       :extension => "txt",
     }.merge(options)
+    
+    @url = options[:url].match(/(.*?)\/?$/)[1]
+    @projects = options[:projects]
+    @username = options[:username]
+    @password = options[:password]
+    @data_dir = File.expand_path(options[:data_dir])
+    @extension = options[:extension]
 
-    @config[:data_dir] = File.expand_path(@config[:data_dir])
-    puts "Using data dir: #{@config[:data_dir]}"
-
-    @config[:url] = @config[:url].match(/(.*?)\/?$/)[1]
-    @config[:login_url] = @config[:url] + "/login"
+    @login_url = @url + "/login"
 
     initialize_system_files
 
@@ -41,19 +51,21 @@ class Redsync
 
 
   def initialize_system_files
-    unless File.exist? @config[:data_dir]
-      puts "Creating #{@config[:data_dir]}"
-      FileUtils.mkdir(@config[:data_dir]) 
+    if File.exist? @data_dir
+      puts "Using data dir: #{@data_dir}"
+    else
+      puts "Creating #{@data_dir}"
+      FileUtils.mkdir(@data_dir) 
     end
   end
 
 
   def login
-    puts "Logging in as #{@config[:username]} to #{@config[:login_url]}..."
-    page = @agent.get(@config[:login_url])
+    puts "Logging in as #{@username} to #{@login_url}..."
+    page = @agent.get(@login_url)
     login_form = page.form_with(:action => "/login")
-    login_form.field_with(:name => "username").value = @config[:username]
-    login_form.field_with(:name => "password").value = @config[:password]
+    login_form.field_with(:name => "username").value = @username
+    login_form.field_with(:name => "password").value = @password
     result_page = login_form.submit
     if result_page.search("a.logout").any?
       puts "Logged in successfully."
@@ -67,12 +79,12 @@ class Redsync
 
 
   def instantiate_wikis
-    @wikis = @config[:projects].inject({}) do |sum, project_identifier|
+    @wikis = @projects.inject({}) do |sum, project_identifier|
       sum[project_identifier] = Wiki.new({
-        :url => @config[:url] + "/projects/" + project_identifier + "/wiki",
-        :cookies => @agent.cookie_jar.cookies(URI.parse(@config[:url])),
-        :data_dir => File.join(@config[:data_dir], project_identifier),
-        :extension => @config[:extension]
+        :url => @url + "/projects/" + project_identifier + "/wiki",
+        :cookies => @agent.cookie_jar.cookies(URI.parse(@url)),
+        :data_dir => File.join(@data_dir, project_identifier),
+        :extension => @extension
       })
       sum
     end
@@ -80,7 +92,7 @@ class Redsync
 
 
   def sync_all
-    @config[:projects].each do |project_identifier|
+    @projects.each do |project_identifier|
       downsync(project_identifier)
     end
   end
@@ -166,5 +178,14 @@ class Redsync
     end
   end
 =end
+  def to_s
+    str = "#<Redsync"
+    str << " url = \"#{@url}\"\n"
+    str << " username = \"#{@username}\"\n"
+    str << " projects = \"#{@projects}\"\n"
+    str << " data_dir = \"#{@data_dir}\"\n"
+    str << " extension = \"#{@extension}\"\n"
+    str << ">"
+  end
 
 end

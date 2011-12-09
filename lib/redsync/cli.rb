@@ -1,6 +1,7 @@
 require 'optparse'
 require 'yaml'
 require 'redsync'
+require 'ir_b'
 
 class Redsync
   class CLI
@@ -13,8 +14,12 @@ class Redsync
         redsync = Redsync.new(YAML.load_file(@options.delete(:config_file)).merge(@options))
         exit unless redsync.login
 
-        time do
-          redsync.sync_all
+        if @options[:interactive]
+          ir b
+        else
+          time do
+            redsync.sync_all
+          end
         end
       end
 
@@ -37,6 +42,9 @@ class Redsync
           end
           opts.on("-d", "--downsync-only", "Downsync only, don't upsync") do |v|
             @options[:downonly] = v
+          end
+          opts.on("-i", "--interactive", "Interactive mode (irb)") do |v|
+            @options[:interactive] = v
           end
           opts.on("-D", "--debug", "Debug mode. Requires ruby-debug19") do |v|
             @options[:debug] = v
