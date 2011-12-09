@@ -1,7 +1,6 @@
 require 'optparse'
 require 'yaml'
 require 'redsync'
-require 'ir_b'
 
 class Redsync
   class CLI
@@ -15,7 +14,7 @@ class Redsync
         exit unless redsync.login
 
         if @options[:interactive]
-          ir b
+          redsync.interactive
         else
           time do
             redsync.sync_all

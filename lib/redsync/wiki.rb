@@ -1,5 +1,6 @@
 require 'uri'
 require 'mechanize'
+require 'yaml'
 require 'datetime_nil_compare'
 
 class Redsync
@@ -25,6 +26,7 @@ class Redsync
       end
 
       @pages_cache = {}
+      @pages_cache_file = File.join(@data_dir, "__redsync_pages_cache.yml")
 
       initialize_system_files
     end
@@ -68,6 +70,24 @@ class Redsync
           wiki_page.remote_updated_at = h3.text
           @pages_cache[wiki_page.name] = wiki_page
         end
+      end
+    end
+
+
+    def write_pages_cache
+      File.open(@pages_cache_file, "w+:UTF-8") do |f|
+        f.write(self.pages.values.map{ |page| page.to_hash}.to_yaml)
+      end
+    end
+
+
+    def load_pages_cache
+      @pages_cache = {}
+      YAML.load_file(@pages_cache_file).each do |page_hash|
+        wiki_page = WikiPage.new(self, page_hash[:name])
+        wiki_page.remote_updated_at = page_hash[:remote_updated_at]
+        wiki_page.downloaded_at = page_hash[:downloaded_at]
+        @pages_cache[page_hash[:name]] = wiki_page
       end
     end
 

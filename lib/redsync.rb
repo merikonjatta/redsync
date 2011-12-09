@@ -8,6 +8,7 @@ require 'date'
 require 'iconv'
 require 'mechanize'
 require 'active_support/all'
+require 'ir_b'
 
 require 'redsync/cli'
 require 'redsync/wiki'
@@ -97,10 +98,20 @@ class Redsync
     end
   end
 
+
   def downsync(project_identifier)
     wiki = @wikis[project_identifier]
     wiki.scan_remote
     debugger;true
+  end
+
+
+  def interactive
+    wikis.each do |project_identifier, wiki|
+      wiki.load_pages_cache
+      wiki.scan_remote
+    end
+    ir b
   end
 
 

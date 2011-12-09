@@ -27,7 +27,7 @@ class Redsync
       else
         @name = name_or_url_or_fullpath
         @local_file = File.join(@wiki.data_dir, "#{@name}.#{@wiki.extension}")
-        @url = @wiki.url + "/" + @name
+        @url = @wiki.url + "/" + URI.encode(@name)
       end
 
       @agent = Mechanize.new
@@ -100,18 +100,35 @@ class Redsync
 
 
     def download
+      download_to(@local_file)
+    end
+
+
+    def download_to(file)
       puts "--Download #{@name}"
       page = @agent.get(@url + "/edit")
-      File.open(@local_file, "w+:UTF-8") { |f| f.write(page.search("textarea")[0].text) }
+      File.open(file, "w+:UTF-8") { |f| f.write(page.search("textarea")[0].text) }
       self.downloaded_at = self.local_updated_at
+    end
+
+
+    def to_hash
+      {
+        :name => @name,
+        :url => @url,
+        :local_file => @local_file,
+        :remote_updated_at => @remote_updated_at,
+        :local_exists => local_exists?,
+        :downloaded_at => @downloaded_at,
+      }
     end
 
 
     def to_s
       str = "#<Redsync::WikiPage"
       str << " name = \"#{name}\"\n"
-      str << " local_file = \"#{local_file}\"\n"
       str << " url = \"#{url}\"\n"
+      str << " local_file = \"#{local_file}\"\n"
       str << " remote_exists? = #{remote_exists?}\n"
       str << " remote_updated_at = #{@remote_updated_at ? @remote_updated_at : "<never>"}\n"
       str << " local_exists? = #{local_exists?}\n"
