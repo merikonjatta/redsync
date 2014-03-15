@@ -26,7 +26,7 @@ Usage: redsync [options]
 
 h2. How it works
 
-Just some scraping...
+Uses Redmine's REST API.
 
 
 h2. Warnings
