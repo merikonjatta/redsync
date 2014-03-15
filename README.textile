@@ -33,9 +33,9 @@ h2. Warnings
 
 This software has NOT BEEN TESTED :(
 Use it at your own risk.
-Please beware that it may not work on all versions of Redmine (it's working fine with my installation of 1.2-stable)
+Please beware that it may not work on all versions of Redmine (it's working fine with my installation of 2.5-stable)
 
-h3. Conflicts
+h2. Conflicts
 
 Redsync does not deal with conflicts well.
 In fact, it does not deal with conflics AT ALL.
