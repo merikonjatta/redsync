@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 # -*- vim: filetype=ruby
 
-if RUBY_VERSION < '1.9'
-  puts "Redsync requires Ruby >= 1.9.0"
+if RUBY_VERSION < '2.0'
+  puts "Redsync requires Ruby >= 2.0"
   exit
 end
 

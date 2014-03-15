@@ -4,7 +4,7 @@ h2. What's this?
 
 Sync your Redmine's wiki contents to your local filesystem.
 Edit them while offline, then upsync them to Redmine.
-(Requires Ruby 1.9)
+(Requires Ruby 2.0)
 
 h2. Install
 
@@ -16,12 +16,11 @@ gem install redsync
 h2. Usage
 
 <pre>
-$ redsync --help
 Usage: redsync [options]
-    -v, --[no-]verbose               Output verbose logs
+    -v, --verbose                    Output verbose logs
     -c, --config FILE                Use specified config file instead of ~/redsync.yml
-    -u, --upsync-only                Upsync only, don't downsync
-    -d, --downsync-only              Downsync only, don't upsync
+    -s, --status                     Status check. No uploads or downloads will happen
+    -i, --interactive                Interactive mode (pry)
 </pre>
 
 
@@ -36,23 +35,12 @@ This software has NOT BEEN TESTED :(
 Use it at your own risk.
 Please beware that it may not work on all versions of Redmine (it's working fine with my installation of 1.2-stable)
 
-h3. Time zones
-
-Redsync assumes that your local timezone is the same as your Redmine timezone.
-Sign in and go to "My Account" to change it.
-
 h3. Conflicts
 
 Redsync does not deal with conflicts well.
 In fact, it does not deal with conflics AT ALL.
 A default run of redsync will downsync first, overwriting any local changes if pages are updated on Redmine.
 Then it will upsync any remaining changes.
-
-h3. Deletions
-
-Redsy does not delete anything.
-It doesn't delete local files when remote wiki pages are gone.
-It doesn't delete remote wiki pages when local files are gone either.
 
 
 h2. License

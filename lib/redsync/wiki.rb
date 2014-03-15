@@ -1,12 +1,12 @@
 require 'uri'
 require 'mechanize'
 require 'yaml'
-require 'iconv'
 
 class Redsync
   class Wiki
 
     attr_reader :url,
+                :api_key,
                 :data_dir,
                 :extension
 
@@ -17,13 +17,11 @@ class Redsync
     #   :extension => File extensions for page files. Defaults to "txt"
     def initialize(options)
       @url = options[:url].match(/(.*?)\/?$/)[1]
+      @api_key = options[:api_key]
       @data_dir = File.expand_path(options[:data_dir])
       @extension = options[:extension]
 
       @agent = Mechanize.new
-      options[:cookies].each do |cookie|
-        @agent.cookie_jar.add(URI.parse(@url), cookie)
-      end
 
       @pages_cache = {}
       @pages_cache_file = File.join(@data_dir, "__redsync_pages_cache.yml")
@@ -31,10 +29,6 @@ class Redsync
       initialize_system_files
     end
 
-
-    def cookies
-      @agent.cookie_jar.cookies(URI.parse(@url))
-    end
 
     def initialize_system_files
       unless File.exist? @data_dir
@@ -107,7 +101,6 @@ class Redsync
 
     def scan_remote
       webpage = @agent.get(@url + "/date_index")
-      now = DateTime.now
 
       # Get remote and local update times using remote list
       webpage.search("#content h3").each do |h3|
@@ -127,7 +120,7 @@ class Redsync
         next if File.directory? file
         next if file =~ /^__redsync_/
         page_name = file.match(/([^\/\\]+?)\.#{@extension}$/)[1]
-        page_name = Iconv.iconv("UTF-8", "UTF-8-MAC", page_name).first if RUBY_PLATFORM =~ /darwin/
+        page_name = page_name.encode("UTF-8-MAC", "UTF-8", :invalid => :replace, :undef => :replace) if RUBY_PLATFORM =~ /darwin/
         next if pages[page_name]
         pp file
         wiki_page = WikiPage.new(self, page_name)

@@ -11,7 +11,6 @@ class Redsync
         check_config_file
 
         redsync = Redsync.new(YAML.load_file(@options.delete(:config_file)).merge(@options))
-        exit unless redsync.login
 
         case @options[:run_mode]
         when :full_sync
@@ -43,11 +42,8 @@ class Redsync
           opts.on("-s", "--status", "Status check. No uploads or downloads will happen") do |v|
             @options[:run_mode] = :status_check
           end
-          opts.on("-i", "--interactive", "Interactive mode (irb)") do |v|
+          opts.on("-i", "--interactive", "Interactive mode (pry)") do |v|
             @options[:run_mode] = :interactive
-          end
-          opts.on("-D", "--debugger", "Debug mode. Requires ruby-debug19") do |v|
-            @options[:debug] = v
           end
         end.parse!
 
